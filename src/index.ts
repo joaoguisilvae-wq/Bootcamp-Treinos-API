@@ -3,7 +3,6 @@ import "dotenv/config";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUI from "@fastify/swagger-ui";
 import Fastify from "fastify";
-
 import {
   jsonSchemaTransform,
   serializerCompiler,
@@ -60,6 +59,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
 });
 
 try {
+  // eslint-disable-next-line no-constant-binary-expression
   await app.listen({ port: Number(process.env.PORT) ?? 8081 });
 } catch (err) {
   app.log.error(err);
