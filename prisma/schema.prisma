@@ -1,8 +1,12 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,91 +15,51 @@ datasource db {
 
 model User {
   id            String        @id
+  workoutPlans  WorkoutPlan[]
   name          String
-  email         String        @unique
+  email         String
   emailVerified Boolean       @default(false)
   image         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  workoutPlans  WorkoutPlan[]
   sessions      Session[]
   accounts      Account[]
-}
 
-model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Account {
-  id                    String    @id @default(uuid())
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountId             String
-  providerId            String
-  accessToken           String?
-  refreshToken          String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  idToken               String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  @@unique([providerId, accountId])
-}
-
-model Verification {
-  id         String   @id @default(uuid())
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([identifier, value])
+  @@unique([email])
+  @@map("user")
 }
 
 model WorkoutPlan {
   id          String       @id @default(uuid())
   name        String
   userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id])
   workoutDays WorkoutDay[]
-  isActive    Boolean      @default(false)
+  isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
 
-enum Weekday {
-  Monday
-  Tuesday
-  Wednesday
-  Thursday
-  Friday
-  Saturday
-  Sunday
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
 
 model WorkoutDay {
   id            String            @id @default(uuid())
   name          String
   workoutPlanId String
-  workoutPlan   WorkoutPlan       @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  workoutPlan   WorkoutPlan       @relation(fields: [workoutPlanId], references: [id])
   isRest        Boolean           @default(false)
-  weekday       Weekday
+  weekDay       WeekDay
   exercises     WorkoutExercise[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  sessions      WorkoutSession[]
 }
 
 model WorkoutExercise {
@@ -103,7 +67,7 @@ model WorkoutExercise {
   name              String
   order             Int
   workoutDayId      String
-  workoutDay        WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  workoutDay        WorkoutDay @relation(fields: [workoutDayId], references: [id])
   sets              Int
   reps              Int
   restTimeInSeconds Int
@@ -111,12 +75,50 @@ model WorkoutExercise {
   updatedAt         DateTime   @updatedAt
 }
 
-model WorkoutSession {
-  id           String     @id @default(uuid())
-  workoutdayId String
-  workoutDay   WorkoutDay @relation(fields: [workoutdayId], references: [id], onDelete: Cascade)
-  startedAt    DateTime   @db.Timestamptz()
-  completedAt  DateTime?  @db.Timestamptz()
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
