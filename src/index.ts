@@ -2,7 +2,6 @@ import "dotenv/config";
 
 import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUI from "@fastify/swagger-ui";
 import fastifyApiReference from "@scalar/fastify-api-reference";
 import Fastify from "fastify";
 import {
@@ -40,7 +39,11 @@ await app.register(fastifySwagger, {
 });
 
 await app.register(fastifyCors, {
-  origin: ["http://localhost:3000"],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+  ],
   credentials: true,
 });
 
