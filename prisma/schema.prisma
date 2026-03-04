@@ -13,22 +13,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id            String        @id
-  workoutPlans  WorkoutPlan[]
-  name          String
-  email         String
-  emailVerified Boolean       @default(false)
-  image         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
-  @@unique([email])
-  @@map("user")
-}
-
 model WorkoutPlan {
   id          String       @id @default(uuid())
   name        String
@@ -75,6 +59,21 @@ model WorkoutExercise {
   updatedAt         DateTime   @updatedAt
 }
 
+model User {
+  id            String        @id
+  workoutPlans  WorkoutPlan[]
+  name          String
+  email         String
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+}
+
 model Session {
   id        String   @id
   expiresAt DateTime
@@ -88,7 +87,6 @@ model Session {
 
   @@unique([token])
   @@index([userId])
-  @@map("session")
 }
 
 model Account {
@@ -108,7 +106,6 @@ model Account {
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
-  @@map("account")
 }
 
 model Verification {
@@ -120,5 +117,4 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
-  @@map("verification")
 }
