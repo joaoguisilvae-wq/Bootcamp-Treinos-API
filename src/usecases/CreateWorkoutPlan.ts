@@ -54,7 +54,7 @@ export class CreateWorkoutPlan {
           workoutDays: {
             create: dto.workoutDays.map((workoutDay) => ({
               name: workoutDay.name,
-              weekDay: WEEKDAY_MAP[workoutDay.weekDay],
+              weekDay: workoutDay.weekDay,
               isRest: workoutDay.isRest,
               exercises: {
                 create: workoutDay.exercises.map((exercise) => ({
