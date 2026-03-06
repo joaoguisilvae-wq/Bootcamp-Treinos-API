@@ -2,7 +2,7 @@ import { notFoundError } from "../errors/index.js";
 import { WeekDay } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
 
-interface Dto {
+export interface CreateWorkoutPlanDto {
   userId: string;
   name: string;
   workoutDays: Array<{
@@ -10,6 +10,7 @@ interface Dto {
     weekDay: WeekDay;
     isRest: boolean;
     estimatedDurationInSeconds: number;
+    coverImageUrl?: string | null;
     exercises: Array<{
       order: number;
       name: string;
@@ -21,7 +22,7 @@ interface Dto {
 }
 
 export class CreateWorkoutPlan {
-  async execute(dto: Dto) {
+  async execute(dto: CreateWorkoutPlanDto) {
     const existingWorkoutPlan = await prisma.workoutPlan.findFirst({
       where: {
         userId: dto.userId,
@@ -47,6 +48,7 @@ export class CreateWorkoutPlan {
               weekDay: workoutDay.weekDay,
               estimatedDurationInSeconds: workoutDay.estimatedDurationInSeconds,
               isRest: workoutDay.isRest,
+              coverImageUrl: workoutDay.coverImageUrl,
               exercises: {
                 create: workoutDay.exercises.map((exercise) => ({
                   name: exercise.name,
