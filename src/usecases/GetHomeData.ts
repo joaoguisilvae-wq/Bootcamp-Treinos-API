@@ -97,7 +97,10 @@ export class GetHomeData {
     });
 
     // Group sessions by date
-    const sessionsByDate: Record<string, { completed: boolean; started: boolean }> = {};
+    const sessionsByDate: Record<
+      string,
+      { completed: boolean; started: boolean }
+    > = {};
 
     for (let i = 0; i < 7; i++) {
       const date = weekStart.add(i, "day");

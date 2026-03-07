@@ -1,0 +1,61 @@
+import { ForbiddenError, notFoundError } from "../errors/index.js";
+import { WeekDay } from "../generated/prisma/enums.js";
+import { prisma } from "../lib/db.js";
+
+interface InputDto {
+  userId: string;
+  workoutPlanId: string;
+}
+
+interface OutputDto {
+  id: string;
+  name: string;
+  workoutDays: Array<{
+    id: string;
+    weekDay: WeekDay;
+    name: string;
+    isRest: boolean;
+    coverImageUrl?: string | null;
+    estimatedDurationInSeconds: number;
+    exercisesCount: number;
+  }>;
+}
+
+export class GetWorkoutPlan {
+  async execute(dto: InputDto): Promise<OutputDto> {
+    const workoutPlan = await prisma.workoutPlan.findUnique({
+      where: { id: dto.workoutPlanId },
+      include: {
+        workoutDays: {
+          include: {
+            _count: {
+              select: { exercises: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!workoutPlan) {
+      throw new notFoundError("Workout plan not found");
+    }
+
+    if (workoutPlan.userId !== dto.userId) {
+      throw new ForbiddenError("You are not the owner of this workout plan");
+    }
+
+    return {
+      id: workoutPlan.id,
+      name: workoutPlan.name,
+      workoutDays: workoutPlan.workoutDays.map((day) => ({
+        id: day.id,
+        weekDay: day.weekDay,
+        name: day.name,
+        isRest: day.isRest,
+        coverImageUrl: day.coverImageUrl,
+        estimatedDurationInSeconds: day.estimatedDurationInSeconds,
+        exercisesCount: day._count.exercises,
+      })),
+    };
+  }
+}
