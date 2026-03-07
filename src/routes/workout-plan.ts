@@ -34,6 +34,91 @@ import {
 } from "../usecases/UpdateWorkoutSession.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
+  // GET /workout-plans - Get all workout plans with optional active filter
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/",
+    schema: {
+      tags: ["Workout Plan"],
+      summary: "Get all workout plans with optional active filter",
+      querystring: z.object({
+        active: z.boolean().optional(),
+      }),
+      response: {
+        200: z.array(GetWorkoutPlanResponseSchema),
+        401: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      try {
+        const authHeader = request.headers.authorization;
+        if (!authHeader?.startsWith("Bearer ")) {
+          return reply.status(401).send({
+            error: "Unauthorized",
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const session = await prisma.session.findUnique({
+          where: { token },
+          include: { user: true },
+        });
+        if (!session || new Date(session.expiresAt) < new Date()) {
+          return reply.status(401).send({
+            error: "Unauthorized",
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        // Build where clause based on active filter
+        // If active is not provided, return all plans (both active and inactive)
+        const whereClause: { userId: string; isActive?: boolean } = {
+          userId: session.userId,
+        };
+        if (request.query.active !== undefined) {
+          whereClause.isActive = request.query.active;
+        }
+
+        const workoutPlans = await prisma.workoutPlan.findMany({
+          where: whereClause,
+          include: {
+            workoutDays: {
+              include: {
+                _count: {
+                  select: { exercises: true },
+                },
+              },
+            },
+          },
+        });
+
+        const result = workoutPlans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          workoutDays: plan.workoutDays.map((day) => ({
+            id: day.id,
+            weekDay: day.weekDay,
+            name: day.name,
+            isRest: day.isRest,
+            coverImageUrl: day.coverImageUrl,
+            estimatedDurationInSeconds: day.estimatedDurationInSeconds,
+            exercisesCount: day._count.exercises,
+          })),
+        }));
+
+        return reply.status(200).send(result);
+      } catch (error) {
+        app.log.error(error);
+        return reply.status(500).send({
+          error: "Internal server error",
+          code: "INTERNAL_ERROR",
+        });
+      }
+    },
+  });
+
   app.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/",
